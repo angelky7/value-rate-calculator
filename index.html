@@ -3,286 +3,352 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>价值投注分析器 v5.0（网页版）</title>
-<link rel="stylesheet" href="https://unpkg.com/mdui@2.1.3/dist/css/mdui.min.css">
-<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet">
+<title>Value Rate Calculator</title>
+<link rel="stylesheet" href="https://unpkg.com/mdui@2/mdui.css">
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
+<script src="https://unpkg.com/mdui@2/mdui.global.js"></script>
 <style>
+  /* ============================================================
+     Pixel MD：mdui 2 全量设计令牌定制
+     Pixel 系特征 = 全组件圆丸化 + 大留白 + 动态配色
+     ============================================================ */
   :root {
-    --g-primary: #1a73e8;
-    --g-primary-hover: #1557b0;
-    --g-primary-light: #e8f0fe;
-    --g-secondary: #5f6368;
-    --g-bg: #f8f9fa;
-    --g-card: #ffffff;
-    --g-border: #dadce0;
-    --g-border-hover: #9aa0a6;
-    --g-text: #202124;
-    --g-text-muted: #5f6368;
-    --g-success: #137333;
-    --g-success-light: #dcfce7;
-    --g-warn: #d93025;
-    --g-warn-light: #f8d7da;
+    /* 圆角令牌：全部拉满（Pixel MD 的核心特征） */
+    --mdui-shape-corner-none: 0;
+    --mdui-shape-corner-extra-small: 1rem;
+    --mdui-shape-corner-small: 1.5rem;
+    --mdui-shape-corner-medium: 2rem;
+    --mdui-shape-corner-large: 2.25rem;
+    --mdui-shape-corner-extra-large: 3rem;
+    --mdui-shape-corner-full: 1000rem;
+
+    /* 状态层 */
+    --mdui-state-layer-hover: 0.08;
+    --mdui-state-layer-focus: 0.1;
+    --mdui-state-layer-pressed: 0.14;
+    --mdui-state-layer-dragged: 0.16;
+
+    /* M3 emphasized 动效 */
+    --mdui-motion-easing-standard: cubic-bezier(0.2, 0, 0, 1);
+    --mdui-motion-easing-emphasized: cubic-bezier(0.05, 0.7, 0.1, 1);
+    --mdui-motion-duration-medium4: 400ms;
   }
-  * { box-sizing: border-box; }
-  html, body {
-    margin: 0; padding: 0;
-    background: var(--g-bg);
-    color: var(--g-text);
-    font-family: "Roboto", "Noto Sans SC", "Microsoft YaHei", "Segoe UI", sans-serif;
-    font-size: 14px;
-    line-height: 1.5;
+
+  body {
+    margin: 0;
+    padding: 0;
+    min-height: 100vh;
+    background-color: rgb(var(--mdui-color-surface-dim));
+    color: rgb(var(--mdui-color-on-surface));
+    font-family: "Roboto", "Noto Sans SC", "Microsoft YaHei", sans-serif;
+    font-size: 0.9375rem;
+    line-height: 1.6;
     -webkit-font-smoothing: antialiased;
+    transition: background-color 0.3s var(--mdui-motion-easing-standard);
   }
+
   .container {
-    max-width: 700px;
+    max-width: 720px;
     margin: 0 auto;
-    padding: 20px 16px 48px;
+    padding: 24px 16px 56px;
   }
-  /* 顶部标题（谷歌风格：白色卡片 + 蓝色主色点缀） */
-  .app-header {
-    background: var(--g-card);
-    border: 1px solid var(--g-border);
-    border-radius: 16px;
-    padding: 20px 24px;
-    margin-bottom: 20px;
-    box-shadow: 0 1px 2px 0 rgb(60 64 67 / 15%), 0 1px 3px 1px rgb(60 64 67 / 8%);
+
+  /* ---------- 顶部 Hero：M3 大标题 + 全丸角 ---------- */
+  .hero {
     display: flex;
     align-items: center;
-    gap: 14px;
+    gap: 18px;
+    padding: 28px 32px;
+    margin-bottom: 24px;
+    background: linear-gradient(135deg,
+      rgb(var(--mdui-color-primary-container)),
+      rgb(var(--mdui-color-secondary-container)));
+    color: rgb(var(--mdui-color-on-primary-container));
+    border-radius: var(--mdui-shape-corner-extra-large);
+    box-shadow: var(--mdui-elevation-level2);
   }
-  .app-header .icon {
-    width: 40px; height: 40px;
-    background: var(--g-primary-light);
-    border-radius: 10px;
+  .hero .logo {
+    width: 60px; height: 60px;
     display: flex; align-items: center; justify-content: center;
-    font-size: 20px;
+    background: rgb(var(--mdui-color-primary));
+    color: rgb(var(--mdui-color-on-primary));
+    border-radius: var(--mdui-shape-corner-full);
+    flex-shrink: 0;
+    box-shadow: var(--mdui-elevation-level2);
+  }
+  .hero .logo mdui-icon { font-size: 30px; }
+  .hero h1 {
+    margin: 0;
+    font-size: 1.625rem;
+    font-weight: 600;
+    letter-spacing: 0;
+    color: rgb(var(--mdui-color-on-primary-container));
+  }
+  .hero .subtitle {
+    margin-top: 2px;
+    font-size: 0.8125rem;
+    color: rgb(var(--mdui-color-on-secondary-container));
+    opacity: 0.85;
+  }
+
+  /* ---------- 分组卡片：mdui-card variant=filled ---------- */
+  mdui-card.group-card {
+    display: block;
+    width: 100%;
+    margin-bottom: 18px;
+    padding: 24px 28px;
+    box-sizing: border-box;
+  }
+  .section-head {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+  .section-head .badge {
+    width: 36px; height: 36px;
+    display: flex; align-items: center; justify-content: center;
+    background: rgb(var(--mdui-color-primary-container));
+    color: rgb(var(--mdui-color-on-primary-container));
+    border-radius: var(--mdui-shape-corner-full);
     flex-shrink: 0;
   }
-  .app-header h1 {
-    margin: 0; font-size: 20px; font-weight: 700; color: var(--g-text);
-    letter-spacing: 0.2px;
-  }
-  .app-header .subtitle {
-    margin: 2px 0 0; font-size: 13px; color: var(--g-text-muted);
-  }
-
-  /* 卡片通用 */
-  .g-card {
-    background: var(--g-card);
-    border: 1px solid var(--g-border);
-    border-radius: 16px;
-    margin-bottom: 16px;
-    padding: 20px 24px;
-    box-shadow: 0 1px 2px 0 rgb(60 64 67 / 10%);
-    transition: box-shadow 0.15s, border-color 0.15s;
-  }
-  .g-card:hover { box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -1px rgb(0 0 0 / 0.06); }
-
-  .section-title {
-    font-size: 15px; font-weight: 700; margin: 0 0 16px; color: var(--g-text);
-    display: flex; align-items: center; gap: 8px;
-  }
-  .section-title .dot {
-    width: 8px; height: 8px; background: var(--g-primary); border-radius: 50%; flex-shrink: 0;
+  .section-head .badge mdui-icon { font-size: 20px; }
+  .section-head .title {
+    font-size: 1.0625rem;
+    font-weight: 500;
+    letter-spacing: 0.015625rem;
+    color: rgb(var(--mdui-color-on-surface));
   }
 
-  /* 输入框：谷歌风格填充 */
-  .g-field {
-    margin-bottom: 14px;
+  /* 输入行布局 */
+  .fields-row {
+    display: flex;
+    gap: 14px;
+    flex-wrap: wrap;
   }
-  .g-field label {
-    display: block; font-size: 12px; color: var(--g-text-muted);
-    margin-bottom: 6px; font-weight: 500;
-  }
-  .g-field input {
-    width: 100%; padding: 10px 14px; border: 1px solid var(--g-border);
-    border-radius: 10px; font-size: 15px; color: var(--g-text);
-    background: #fff; outline: none;
-    transition: border-color 0.15s, box-shadow 0.15s;
-  }
-  .g-field input:focus {
-    border-color: var(--g-primary);
-    box-shadow: 0 0 0 3px rgba(26, 115, 232, 0.12);
-  }
-  .g-field input::placeholder { color: #bdc1c6; }
+  .fields-row mdui-text-field { flex: 1; min-width: 130px; }
 
-  /* 按钮：谷歌风格 */
-  .btns { display: flex; gap: 10px; justify-content: center; margin-top: 8px; flex-wrap: wrap; }
-  .g-btn {
-    border: none; border-radius: 10px; font-size: 14px; font-weight: 500;
-    padding: 10px 22px; cursor: pointer; transition: background 0.15s, transform 0.05s;
-    font-family: inherit;
+  /* ---------- 按钮行 ---------- */
+  .btns {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin: 26px 0 10px;
   }
-  .g-btn:active { transform: scale(0.98); }
-  .g-btn-primary { background: var(--g-primary); color: #fff; min-width: 100px; }
-  .g-btn-primary:hover { background: var(--g-primary-hover); }
-  .g-btn-secondary { background: #f1f3f4; color: var(--g-text); border: 1px solid var(--g-border); min-width: 72px; }
-  .g-btn-secondary:hover { background: #e8eaed; }
-  .g-btn-success { background: var(--g-success); color: #fff; min-width: 72px; }
-  .g-btn-success:hover { background: #10662c; }
+  .btns mdui-button { min-width: 108px; }
 
-  /* 核心结论卡 */
-  .conclusion-card {
-    border: 1px solid var(--g-border);
-    border-radius: 20px;
-    padding: 22px 26px;
-    margin-bottom: 20px;
-    background: var(--g-card);
-    position: relative;
-    overflow: hidden;
-    box-shadow: 0 1px 2px 0 rgb(60 64 67 / 10%);
+  /* ---------- 结论卡：mdui-card variant=elevated + 动态容器色 ---------- */
+  #conclusionWrap { display: none; margin-bottom: 20px; }
+  #conclusionWrap.show { display: block; }
+  #conclusionWrap mdui-card {
+    width: 100%;
+    padding: 28px 30px;
+    box-sizing: border-box;
+    display: block;
   }
-  .conclusion-card::before {
-    content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 6px;
-    border-radius: 20px 0 0 20px;
+  /* 用 CSS Part + 动态容器色实现结论卡的语义配色 */
+  #conclusionWrap mdui-card::part(container) {
+    border-radius: var(--mdui-shape-corner-extra-large);
   }
-  .conclusion-card.rec { border-left-color: var(--g-success); }
-  .conclusion-card.rec::before { background: var(--g-success); }
-  .conclusion-card.caution { border-left-color: #f29900; }
-  .conclusion-card.caution::before { background: #f29900; }
-  .conclusion-card.none { border-left-color: #9aa0a6; }
-  .conclusion-card.none::before { background: #9aa0a6; }
+  #conclusionWrap[data-type="rec"] mdui-card {
+    --mdui-color-primary: var(--mdui-color-primary-light);
+    background: rgb(var(--mdui-color-primary-container));
+  }
+  #conclusionWrap[data-type="caution"] mdui-card {
+    background: rgb(var(--mdui-color-tertiary-container));
+  }
+  #conclusionWrap[data-type="none"] mdui-card {
+    background: rgb(var(--mdui-color-surface-container-high));
+  }
 
   .conclusion-badge {
-    display: inline-flex; align-items: center; gap: 6px;
-    padding: 6px 14px; border-radius: 20px; font-size: 12.5px; font-weight: 700;
-    margin-bottom: 10px; width: fit-content;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    height: 32px;
+    padding: 0 18px;
+    border-radius: var(--mdui-shape-corner-full);
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.03rem;
+    margin-bottom: 16px;
+    width: fit-content;
+    background: rgb(var(--mdui-color-surface-container-highest));
+    color: rgb(var(--mdui-color-on-surface));
   }
-  .badge-rec { background: var(--g-success-light); color: var(--g-success); border: 1px solid #86d69b; }
-  .badge-caution { background: #fef3e3; color: #c16a00; border: 1px solid #f2c99d; }
-  .badge-none { background: #eceff1; color: #616161; border: 1px solid #cfd8dc; }
-
   .conclusion-title {
-    font-size: 24px; font-weight: 800; margin: 0 0 6px; color: var(--g-text); letter-spacing: 0.4px;
+    margin: 0 0 8px;
+    font-size: 1.75rem;
+    font-weight: 600;
+    line-height: 1.25;
+    color: rgb(var(--mdui-color-on-surface));
   }
-  .conclusion-sub { margin: 0 0 14px; font-size: 14px; color: var(--g-text-muted); }
+  .conclusion-sub {
+    margin: 0 0 18px;
+    font-size: 0.875rem;
+    color: rgb(var(--mdui-color-on-surface-variant));
+  }
+  .amount-row {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    padding: 18px 26px;
+    margin-bottom: 10px;
+    background: rgb(var(--mdui-color-surface-container-highest));
+    border-radius: var(--mdui-shape-corner-medium);
+    width: fit-content;
+  }
+  .amount-big {
+    font-size: 2.25rem;
+    font-weight: 700;
+    line-height: 1;
+    color: rgb(var(--mdui-color-on-surface));
+    font-variant-numeric: tabular-nums;
+  }
+  .amount-unit { font-size: 1rem; color: rgb(var(--mdui-color-on-surface-variant)); }
+  .amount-tip {
+    margin: 0;
+    font-size: 0.75rem;
+    color: rgb(var(--mdui-color-on-surface-variant));
+  }
 
-  .amount-row { display: flex; gap: 8px; align-items: baseline; margin-bottom: 8px; }
-  .amount-big { font-size: 28px; font-weight: 800; color: var(--g-text); }
-  .amount-unit { font-size: 15px; color: var(--g-text-muted); }
-  .amount-tip { font-size: 12.5px; color: var(--g-text-muted); }
-
-  /* 关键指标行 */
-  .metrics { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 20px; }
+  /* ---------- 关键指标：M3 统计小卡 ---------- */
+  #metricsWrap { display: none; gap: 12px; flex-wrap: wrap; margin-bottom: 20px; }
+  #metricsWrap.show { display: flex; }
   .metric-card {
-    flex: 1; min-width: 120px; background: var(--g-card);
-    border: 1px solid var(--g-border); border-radius: 14px; padding: 14px 16px;
-    text-align: center; box-shadow: 0 1px 2px 0 rgb(60 64 67 / 8%);
+    flex: 1;
+    min-width: 125px;
+    padding: 16px 12px;
+    text-align: center;
+    background: rgb(var(--mdui-color-surface-container-low));
+    border-radius: var(--mdui-shape-corner-medium);
+    box-shadow: var(--mdui-elevation-level1);
   }
-  .metric-label { display: block; font-size: 11.5px; color: var(--g-text-muted); margin-bottom: 6px; font-weight: 500; }
-  .metric-value { display: block; font-size: 17px; font-weight: 700; color: var(--g-text); }
-  .metric-value.pos { color: var(--g-success); }
-  .metric-value.neg { color: #d93025; }
-  .metric-value.zero { color: #9aa0a6; }
+  .metric-label {
+    display: block;
+    margin-bottom: 6px;
+    font-size: 0.6875rem;
+    font-weight: 500;
+    letter-spacing: 0.03rem;
+    color: rgb(var(--mdui-color-on-surface-variant));
+  }
+  .metric-value {
+    display: block;
+    font-size: 1.0625rem;
+    font-weight: 600;
+    color: rgb(var(--mdui-color-on-surface));
+    font-variant-numeric: tabular-nums;
+  }
+  .metric-value.pos { color: rgb(var(--mdui-color-primary)); }
+  .metric-value.neg { color: rgb(var(--mdui-color-error)); }
+  .metric-value.zero { color: rgb(var(--mdui-color-on-surface-variant)); }
 
-  /* 详情折叠：谷歌 Expansion Panel 风格 */
+  /* ---------- 详情折叠：mdui-collapse + mdui-list-item header ---------- */
   .detail-panel {
-    border: 1px solid var(--g-border); border-radius: 14px;
-    margin-bottom: 16px; background: var(--g-card); overflow: hidden;
+    background: rgb(var(--mdui-color-surface-container-low));
+    border-radius: var(--mdui-shape-corner-medium);
+    overflow: hidden;
+    box-shadow: var(--mdui-elevation-level1);
+    margin-bottom: 20px;
   }
-  .detail-header {
-    padding: 14px 20px; cursor: pointer; display: flex;
-    align-items: center; gap: 10px; font-size: 14px; font-weight: 500;
-    color: var(--g-text); user-select: none;
-    transition: background 0.15s;
+  .detail-panel mdui-list-item[slot="header"] {
+    --mdui-shape-corner: var(--mdui-shape-corner-medium);
+    font-size: 0.875rem;
+    font-weight: 500;
   }
-  .detail-header:hover { background: #f1f3f4; }
-  .detail-header .arrow { font-size: 13px; transition: transform 0.2s; flex-shrink: 0; }
-  .detail-header.collapsed .arrow { transform: rotate(-90deg); }
-  .detail-body { display: none; }
-  .detail-body.expanded { display: block; }
-  .detail-inner { padding: 18px 22px; font-size: 13.5px; color: var(--g-text);
-    line-height: 1.7; white-space: pre-wrap; word-wrap: break-word; }
-  .detail-section { margin-bottom: 14px; }
-  .detail-section:last-child { margin-bottom: 0; }
-  .detail-subtitle {
-    font-size: 13px; font-weight: 700; color: var(--g-primary); margin: 0 0 6px;
-    border-left: 3px solid var(--g-primary-light); padding-left: 8px;
+  .detail-inner {
+    padding: 4px 26px 22px;
+    font-size: 0.8125rem;
+    line-height: 2;
+    color: rgb(var(--mdui-color-on-surface-variant));
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    font-variant-numeric: tabular-nums;
   }
 
-  .ok { color: var(--g-success); font-weight: 700; }
-  .bad { color: #d93025; font-weight: 700; }
-  .warn { color: #f29900; font-weight: 700; }
+  footer {
+    text-align: center;
+    margin-top: 28px;
+    padding-top: 16px;
+    font-size: 0.75rem;
+    color: rgb(var(--mdui-color-on-surface-variant));
+  }
 
-  footer { text-align: center; color: var(--g-text-muted); font-size: 12px; margin-top: 24px; padding-top: 12px; border-top: 1px solid var(--g-border); }
   @media (max-width: 600px) {
-    .container { padding: 14px 12px 40px; }
-    .app-header { padding: 16px 20px; flex-direction: column; align-items: flex-start; gap: 10px; }
-    .conclusion-title { font-size: 20px; }
-    .amount-big { font-size: 22px; }
-    .metric-card { min-width: 105px; padding: 12px 14px; }
-    .metric-value { font-size: 15px; }
+    .container { padding: 16px 12px 44px; }
+    .hero { padding: 22px 24px; gap: 14px; }
+    .hero .logo { width: 50px; height: 50px; }
+    .hero h1 { font-size: 1.25rem; }
+    mdui-card.group-card { padding: 20px 22px; }
+    #conclusionWrap mdui-card { padding: 24px 22px; }
+    .conclusion-title { font-size: 1.375rem; }
+    .amount-big { font-size: 1.75rem; }
+    .metric-card { min-width: 105px; padding: 13px 10px; }
+    .metric-value { font-size: 0.9375rem; }
   }
 </style>
 </head>
 <body>
 <div class="container">
-  <div class="app-header">
-    <div class="icon">📈</div>
+
+  <!-- Hero -->
+  <div class="hero">
+    <div class="logo"><mdui-icon name="insights--rounded"></mdui-icon></div>
     <div>
-      <h1>价值投注分析器 v5.0</h1>
-      <div class="subtitle">网页版 · 输入赔率后点击【开始分析】，查看投注建议</div>
+      <h1>价值收益率计算器</h1>
+      <div class="subtitle">输入数值自动识别赔率 / 奖励率，给出参考结论</div>
     </div>
   </div>
 
-  <!-- 网站 -->
-  <div class="g-card">
-    <div class="section-title"><span class="dot"></span>网站赔率 / 奖励率</div>
-    <div style="display:flex; gap:12px; flex-wrap:wrap; align-items:flex-end;">
-      <div style="flex:1; min-width:130px;">
-        <div class="g-field">
-          <label>主队</label>
-          <input type="number" id="main_home" step="0.01" min="0">
-        </div>
-      </div>
-      <div style="flex:1; min-width:130px;">
-        <div class="g-field">
-          <label>客队</label>
-          <input type="number" id="main_away" step="0.01" min="0">
-        </div>
-      </div>
+  <!-- 网站输入 -->
+  <mdui-card class="group-card" variant="filled">
+    <div class="section-head">
+      <span class="badge"><mdui-icon name="public--rounded"></mdui-icon></span>
+      <span class="title">网站数值</span>
     </div>
-  </div>
-
-  <!-- 对比平台 -->
-  <div class="g-card">
-    <div class="section-title"><span class="dot"></span>对比平台赔率 / 奖励率</div>
-    <div style="display:flex; gap:12px; flex-wrap:wrap; align-items:flex-end;">
-      <div style="flex:1; min-width:130px;">
-        <div class="g-field">
-          <label>主队</label>
-          <input type="number" id="game_home" step="0.01" min="0">
-        </div>
-      </div>
-      <div style="flex:1; min-width:130px;">
-        <div class="g-field">
-          <label>客队</label>
-          <input type="number" id="game_away" step="0.01" min="0">
-        </div>
-      </div>
+    <div class="fields-row">
+      <mdui-text-field id="main_home" variant="filled" label="主队" type="number" step="0.01" min="0"></mdui-text-field>
+      <mdui-text-field id="main_away" variant="filled" label="客队" type="number" step="0.01" min="0"></mdui-text-field>
     </div>
-  </div>
+  </mdui-card>
 
+  <!-- 对比平台输入 -->
+  <mdui-card class="group-card" variant="filled">
+    <div class="section-head">
+      <span class="badge"><mdui-icon name="compare_arrows--rounded"></mdui-icon></span>
+      <span class="title">对比平台数值</span>
+    </div>
+    <div class="fields-row">
+      <mdui-text-field id="game_home" variant="filled" label="主队" type="number" step="0.01" min="0"></mdui-text-field>
+      <mdui-text-field id="game_away" variant="filled" label="客队" type="number" step="0.01" min="0"></mdui-text-field>
+    </div>
+  </mdui-card>
+
+  <!-- 操作按钮 -->
   <div class="btns">
-    <button class="g-btn g-btn-primary" id="btnAnalyze">开始分析</button>
-    <button class="g-btn g-btn-secondary" id="btnClear">清空</button>
-    <button class="g-btn g-btn-success" id="btnExample">示例</button>
+    <mdui-button id="btnAnalyze" variant="filled" icon="play_arrow--rounded">开始分析</mdui-button>
+    <mdui-button id="btnClear" variant="outlined" icon="restart_alt--rounded">清空</mdui-button>
+    <mdui-button id="btnExample" variant="tonal" icon="science--rounded">示例</mdui-button>
   </div>
 
-  <!-- 核心结论（分析后显示） -->
-  <div id="conclusionWrap" class="conclusion-card" style="display:none;">
-    <div class="conclusion-badge" id="conclusionBadge"></div>
-    <h2 class="conclusion-title" id="conclusionTitle">—</h2>
-    <p class="conclusion-sub" id="conclusionSub">—</p>
-    <div class="amount-row">
-      <span class="amount-big" id="conclusionAmount">—</span>
-      <span class="amount-unit" id="conclusionAmountUnit">元</span>
-    </div>
-    <p class="amount-tip" id="conclusionTip"></p>
+  <!-- 结论 -->
+  <div id="conclusionWrap" data-type="none">
+    <mdui-card variant="elevated">
+      <div class="conclusion-badge" id="conclusionBadge"></div>
+      <h2 class="conclusion-title" id="conclusionTitle">—</h2>
+      <p class="conclusion-sub" id="conclusionSub">—</p>
+      <div class="amount-row">
+        <span class="amount-big" id="conclusionAmount">—</span>
+        <span class="amount-unit" id="conclusionAmountUnit">元</span>
+      </div>
+      <p class="amount-tip" id="conclusionTip"></p>
+    </mdui-card>
   </div>
 
   <!-- 关键指标 -->
-  <div id="metricsWrap" class="metrics" style="display:none;">
+  <div id="metricsWrap">
     <div class="metric-card">
       <span class="metric-label">网站胜率 主/客</span>
       <span class="metric-value" id="mProb">—</span>
@@ -300,28 +366,31 @@
       <span class="metric-value" id="mValue">—</span>
     </div>
     <div class="metric-card">
-      <span class="metric-label">期望收益 主/客</span>
+      <span class="metric-label">期望 主/客</span>
       <span class="metric-value" id="mExpected">—</span>
     </div>
   </div>
 
   <!-- 详情折叠 -->
   <div class="detail-panel">
-    <div class="detail-header collapsed" id="detailHeader" onclick="toggleDetail()">
-      <span>🔍 查看详细计算过程</span>
-      <span class="arrow" id="detailArrow">▼</span>
-    </div>
-    <div class="detail-body" id="detailBody">
-      <div class="detail-inner" id="detailContent">填写 4 个数值后点击【开始分析】。
+    <mdui-collapse>
+      <mdui-collapse-item>
+        <mdui-list-item slot="header" icon="calculate--rounded" end-icon="keyboard_arrow_down--rounded">
+          查看详细计算过程
+        </mdui-list-item>
+        <div class="detail-inner" id="detailContent">填写 4 个数值后点击【开始分析】。
 推荐下注金额为 100 的整数，范围 100-2000 元。</div>
-    </div>
+      </mdui-collapse-item>
+    </mdui-collapse>
   </div>
 
-  <footer>价值投注分析器 v5.0 · 网页版</footer>
+  <footer>价值收益率计算器 · Value Rate Calculator</footer>
 </div>
 
-<script src="https://unpkg.com/mdui@2.1.3/dist/js/mdui.min.js"></script>
 <script>
+// Pixel MD：以 Google 蓝 #1a73e8 生成完整 M3 动态配色
+mdui.setColorScheme('#1a73e8');
+
 (function () {
   const $ = (id) => document.getElementById(id);
 
@@ -349,14 +418,6 @@
   // 避免出现 -0.0%
   function nz(x) { return Math.abs(x) < 0.05 ? 0 : x; }
 
-  window.toggleDetail = function () {
-    const header = $('detailHeader');
-    const body = $('detailBody');
-    const expanded = body.classList.toggle('expanded');
-    header.classList.toggle('collapsed', !expanded);
-    $('detailArrow').textContent = expanded ? '▲' : '▼';
-  };
-
   function analyze() {
     try {
       const mainHome = parseFloat($('main_home').value);
@@ -365,11 +426,11 @@
       const gameAway = parseFloat($('game_away').value);
 
       if (isNaN(mainHome) || isNaN(mainAway) || isNaN(gameHome) || isNaN(gameAway)) {
-        alert('请输入有效的数字！');
+        mdui.alert('请输入有效的数字！', '输入错误');
         return;
       }
       if (mainHome <= 0 || mainAway <= 0 || gameHome <= 0 || gameAway <= 0) {
-        alert('数值必须大于0！');
+        mdui.alert('数值必须大于0！', '输入错误');
         return;
       }
 
@@ -404,20 +465,17 @@
       function buildRec(team, value, expected) {
         if (value > 0 && expected > 0) {
           return { type: 'rec', team, value, expected,
-            text: `✅ 强烈推荐买入${team}`,
-            amount: BET_MAX };
+            text: `强烈推荐买入${team}`, amount: BET_MAX };
         }
         if (value > 0) {
           return { type: 'caution', team, value, expected,
-            text: `⚠️ 谨慎买入${team}（价值${value.toFixed(1)}%，期望${expected.toFixed(1)}%）`,
-            amount: BET_MIN };
+            text: `谨慎买入${team}`, amount: BET_MIN };
         }
         if (expected > 0) {
           return { type: 'caution', team, value, expected,
-            text: `⚠️ 谨慎买入${team}（期望${expected.toFixed(1)}%，价值${value.toFixed(1)}%）`,
-            amount: BET_MIN };
+            text: `谨慎买入${team}`, amount: BET_MIN };
         }
-        return { type: 'none', team, value, expected, text: `❌ 不建议买入${team}`, amount: 0 };
+        return { type: 'none', team, value, expected, text: `不建议买入${team}`, amount: 0 };
       }
       const recHome = buildRec('主队', homeValue, homeExpected);
       const recAway = buildRec('客队', awayValue, awayExpected);
@@ -426,50 +484,44 @@
       const recs = [recHome, recAway].sort((a, b) => order[b.type] - order[a.type]);
 
       const wrap = $('conclusionWrap');
-      const badge = $('conclusionBadge');
-      const title = $('conclusionTitle');
-      const sub = $('conclusionSub');
-      const amount = $('conclusionAmount');
-      const amountUnit = $('conclusionAmountUnit');
-      const tip = $('conclusionTip');
-
       const best = recs[0];
       const noneBoth = recHome.type === 'none' && recAway.type === 'none';
-      wrap.style.display = 'block';
-      wrap.className = 'conclusion-card ' +
-        (noneBoth ? 'none' : best.type === 'rec' ? 'rec' : 'caution');
 
-      badge.className = 'conclusion-badge ' +
-        (noneBoth ? 'badge-none' : best.type === 'rec' ? 'badge-rec' : 'badge-caution');
-      badge.textContent = noneBoth ? '❌ 不推荐' : best.type === 'rec' ? '✅ 强烈推荐' : '⚠️ 谨慎推荐';
+      wrap.classList.add('show');
+      wrap.dataset.type = noneBoth ? 'none' : best.type;
+      wrap.style.animation = 'none';
+      void wrap.offsetWidth;
+      wrap.style.animation = 'm3-rise 0.35s cubic-bezier(0.05, 0.7, 0.1, 1)';
 
-      title.textContent = noneBoth ? '❌ 本场不建议下注' : best.text;
-      sub.textContent = noneBoth
+      $('conclusionBadge').textContent = noneBoth ? '不推荐' : best.type === 'rec' ? '强烈推荐' : '谨慎推荐';
+      $('conclusionTitle').textContent = noneBoth ? '本场不建议下注' : `建议买入${best.team}`;
+      $('conclusionSub').textContent = noneBoth
         ? '主客队均无正价值且无正期望'
-        : `价值${best.value.toFixed(1)}% / 期望${best.expected.toFixed(1)}%`;
+        : `价值 ${best.value.toFixed(1)}% ／ 期望 ${best.expected.toFixed(1)}%`;
 
       // 推荐下注金额（范围 100-2000 元）
       if (best.amount > 0) {
-        amount.textContent = best.amount.toFixed(0);
-        amountUnit.textContent = ' 元';
-        tip.textContent = `推荐下注金额：${best.amount.toFixed(0)} 元（下注范围 100-2000 元）`;
+        $('conclusionAmount').textContent = best.amount.toFixed(0);
+        $('conclusionAmountUnit').textContent = ' 元';
+        $('conclusionTip').textContent = `推荐下注 ${best.amount.toFixed(0)} 元（范围 100-2000 元）`;
       } else {
-        amount.textContent = '0';
-        amountUnit.textContent = ' 元';
-        tip.textContent = '不推荐下注';
+        $('conclusionAmount').textContent = '0';
+        $('conclusionAmountUnit').textContent = ' 元';
+        $('conclusionTip').textContent = '不推荐下注';
       }
 
       // 指标卡
-      $('metricsWrap').style.display = 'flex';
-      $('mProb').innerHTML = fmtPct(homeProbAdj) + ' / ' + fmtPct(awayProbAdj);
-      $('mFair').innerHTML = fairHomeOdds.toFixed(2) + ' / ' + fairAwayOdds.toFixed(2);
-      $('mOdds').innerHTML = homeOdds.toFixed(2) + ' / ' + awayOdds.toFixed(2);
+      $('metricsWrap').classList.add('show');
+      $('mProb').textContent = fmtPct(homeProbAdj) + ' / ' + fmtPct(awayProbAdj);
+      $('mProb').className = 'metric-value zero';
+      $('mFair').textContent = fairHomeOdds.toFixed(2) + ' / ' + fairAwayOdds.toFixed(2);
+      $('mOdds').textContent = homeOdds.toFixed(2) + ' / ' + awayOdds.toFixed(2);
       $('mValue').className = 'metric-value ' + (homeValue > 0 || awayValue > 0 ? 'pos' : 'neg');
       $('mValue').textContent = homeValue.toFixed(1) + '% / ' + awayValue.toFixed(1) + '%';
       $('mExpected').className = 'metric-value ' + (homeExpected > 0 || awayExpected > 0 ? 'pos' : 'neg');
       $('mExpected').textContent = homeExpected.toFixed(1) + '% / ' + awayExpected.toFixed(1) + '%';
 
-      // 详细过程（精简到 6 行关键数据）
+      // 详细过程
       const detail = [];
       detail.push(`识别：网站=${websiteType}，对比平台=${gameType}`);
       detail.push(`胜率：主 ${fmtPct(homeProbAdj)} / 客 ${fmtPct(awayProbAdj)}`);
@@ -481,22 +533,15 @@
 
       $('detailContent').textContent = detail.join('\n');
 
-      $('detailBody').classList.remove('expanded');
-      $('detailHeader').classList.add('collapsed');
-      $('detailArrow').textContent = '▼';
-
     } catch (e) {
-      alert('计算出错：' + e.message);
+      mdui.alert('计算出错：' + e.message, '错误');
     }
   }
 
   function clearAll() {
-    $('main_home').value = '';
-    $('main_away').value = '';
-    $('game_home').value = '';
-    $('game_away').value = '';
-    $('conclusionWrap').style.display = 'none';
-    $('metricsWrap').style.display = 'none';
+    ['main_home', 'main_away', 'game_home', 'game_away'].forEach(id => { $(id).value = ''; });
+    $('conclusionWrap').classList.remove('show');
+    $('metricsWrap').classList.remove('show');
     $('detailContent').textContent = '填写 4 个数值后点击【开始分析】。\n推荐下注金额为 100 的整数，范围 100-2000 元。';
   }
 
@@ -517,6 +562,16 @@
       analyze();
     }
   });
+
+  // 结论卡入场动画
+  const style = document.createElement('style');
+  style.textContent = `
+    @keyframes m3-rise {
+      from { opacity: 0; transform: translateY(16px) scale(0.98); }
+      to   { opacity: 1; transform: none; }
+    }
+  `;
+  document.head.appendChild(style);
 })();
 </script>
 </body>
