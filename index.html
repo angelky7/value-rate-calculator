@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>价值投注分析器 v5.0（网页版）</title>
+<link rel="stylesheet" href="https://unpkg.com/mdui@2.1.3/dist/css/mdui.min.css">
+<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --g-primary: #1a73e8;
+    --g-primary-hover: #1557b0;
+    --g-primary-light: #e8f0fe;
+    --g-secondary: #5f6368;
+    --g-bg: #f8f9fa;
+    --g-card: #ffffff;
+    --g-border: #dadce0;
+    --g-border-hover: #9aa0a6;
+    --g-text: #202124;
+    --g-text-muted: #5f6368;
+    --g-success: #137333;
+    --g-success-light: #dcfce7;
+    --g-warn: #d93025;
+    --g-warn-light: #f8d7da;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0; padding: 0;
+    background: var(--g-bg);
+    color: var(--g-text);
+    font-family: "Roboto", "Noto Sans SC", "Microsoft YaHei", "Segoe UI", sans-serif;
+    font-size: 14px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+  .container {
+    max-width: 700px;
+    margin: 0 auto;
+    padding: 20px 16px 48px;
+  }
+  /* 顶部标题（谷歌风格：白色卡片 + 蓝色主色点缀） */
+  .app-header {
+    background: var(--g-card);
+    border: 1px solid var(--g-border);
+    border-radius: 16px;
+    padding: 20px 24px;
+    margin-bottom: 20px;
+    box-shadow: 0 1px 2px 0 rgb(60 64 67 / 15%), 0 1px 3px 1px rgb(60 64 67 / 8%);
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+  .app-header .icon {
+    width: 40px; height: 40px;
+    background: var(--g-primary-light);
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px;
+    flex-shrink: 0;
+  }
+  .app-header h1 {
+    margin: 0; font-size: 20px; font-weight: 700; color: var(--g-text);
+    letter-spacing: 0.2px;
+  }
+  .app-header .subtitle {
+    margin: 2px 0 0; font-size: 13px; color: var(--g-text-muted);
+  }
+
+  /* 卡片通用 */
+  .g-card {
+    background: var(--g-card);
+    border: 1px solid var(--g-border);
+    border-radius: 16px;
+    margin-bottom: 16px;
+    padding: 20px 24px;
+    box-shadow: 0 1px 2px 0 rgb(60 64 67 / 10%);
+    transition: box-shadow 0.15s, border-color 0.15s;
+  }
+  .g-card:hover { box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -1px rgb(0 0 0 / 0.06); }
+
+  .section-title {
+    font-size: 15px; font-weight: 700; margin: 0 0 16px; color: var(--g-text);
+    display: flex; align-items: center; gap: 8px;
+  }
+  .section-title .dot {
+    width: 8px; height: 8px; background: var(--g-primary); border-radius: 50%; flex-shrink: 0;
+  }
+
+  /* 输入框：谷歌风格填充 */
+  .g-field {
+    margin-bottom: 14px;
+  }
+  .g-field label {
+    display: block; font-size: 12px; color: var(--g-text-muted);
+    margin-bottom: 6px; font-weight: 500;
+  }
+  .g-field input {
+    width: 100%; padding: 10px 14px; border: 1px solid var(--g-border);
+    border-radius: 10px; font-size: 15px; color: var(--g-text);
+    background: #fff; outline: none;
+    transition: border-color 0.15s, box-shadow 0.15s;
+  }
+  .g-field input:focus {
+    border-color: var(--g-primary);
+    box-shadow: 0 0 0 3px rgba(26, 115, 232, 0.12);
+  }
+  .g-field input::placeholder { color: #bdc1c6; }
+
+  /* 按钮：谷歌风格 */
+  .btns { display: flex; gap: 10px; justify-content: center; margin-top: 8px; flex-wrap: wrap; }
+  .g-btn {
+    border: none; border-radius: 10px; font-size: 14px; font-weight: 500;
+    padding: 10px 22px; cursor: pointer; transition: background 0.15s, transform 0.05s;
+    font-family: inherit;
+  }
+  .g-btn:active { transform: scale(0.98); }
+  .g-btn-primary { background: var(--g-primary); color: #fff; min-width: 100px; }
+  .g-btn-primary:hover { background: var(--g-primary-hover); }
+  .g-btn-secondary { background: #f1f3f4; color: var(--g-text); border: 1px solid var(--g-border); min-width: 72px; }
+  .g-btn-secondary:hover { background: #e8eaed; }
+  .g-btn-success { background: var(--g-success); color: #fff; min-width: 72px; }
+  .g-btn-success:hover { background: #10662c; }
+
+  /* 核心结论卡 */
+  .conclusion-card {
+    border: 1px solid var(--g-border);
+    border-radius: 20px;
+    padding: 22px 26px;
+    margin-bottom: 20px;
+    background: var(--g-card);
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 1px 2px 0 rgb(60 64 67 / 10%);
+  }
+  .conclusion-card::before {
+    content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 6px;
+    border-radius: 20px 0 0 20px;
+  }
+  .conclusion-card.rec { border-left-color: var(--g-success); }
+  .conclusion-card.rec::before { background: var(--g-success); }
+  .conclusion-card.caution { border-left-color: #f29900; }
+  .conclusion-card.caution::before { background: #f29900; }
+  .conclusion-card.none { border-left-color: #9aa0a6; }
+  .conclusion-card.none::before { background: #9aa0a6; }
+
+  .conclusion-badge {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 6px 14px; border-radius: 20px; font-size: 12.5px; font-weight: 700;
+    margin-bottom: 10px; width: fit-content;
+  }
+  .badge-rec { background: var(--g-success-light); color: var(--g-success); border: 1px solid #86d69b; }
+  .badge-caution { background: #fef3e3; color: #c16a00; border: 1px solid #f2c99d; }
+  .badge-none { background: #eceff1; color: #616161; border: 1px solid #cfd8dc; }
+
+  .conclusion-title {
+    font-size: 24px; font-weight: 800; margin: 0 0 6px; color: var(--g-text); letter-spacing: 0.4px;
+  }
+  .conclusion-sub { margin: 0 0 14px; font-size: 14px; color: var(--g-text-muted); }
+
+  .amount-row { display: flex; gap: 8px; align-items: baseline; margin-bottom: 8px; }
+  .amount-big { font-size: 28px; font-weight: 800; color: var(--g-text); }
+  .amount-unit { font-size: 15px; color: var(--g-text-muted); }
+  .amount-tip { font-size: 12.5px; color: var(--g-text-muted); }
+
+  /* 关键指标行 */
+  .metrics { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 20px; }
+  .metric-card {
+    flex: 1; min-width: 120px; background: var(--g-card);
+    border: 1px solid var(--g-border); border-radius: 14px; padding: 14px 16px;
+    text-align: center; box-shadow: 0 1px 2px 0 rgb(60 64 67 / 8%);
+  }
+  .metric-label { display: block; font-size: 11.5px; color: var(--g-text-muted); margin-bottom: 6px; font-weight: 500; }
+  .metric-value { display: block; font-size: 17px; font-weight: 700; color: var(--g-text); }
+  .metric-value.pos { color: var(--g-success); }
+  .metric-value.neg { color: #d93025; }
+  .metric-value.zero { color: #9aa0a6; }
+
+  /* 详情折叠：谷歌 Expansion Panel 风格 */
+  .detail-panel {
+    border: 1px solid var(--g-border); border-radius: 14px;
+    margin-bottom: 16px; background: var(--g-card); overflow: hidden;
+  }
+  .detail-header {
+    padding: 14px 20px; cursor: pointer; display: flex;
+    align-items: center; gap: 10px; font-size: 14px; font-weight: 500;
+    color: var(--g-text); user-select: none;
+    transition: background 0.15s;
+  }
+  .detail-header:hover { background: #f1f3f4; }
+  .detail-header .arrow { font-size: 13px; transition: transform 0.2s; flex-shrink: 0; }
+  .detail-header.collapsed .arrow { transform: rotate(-90deg); }
+  .detail-body { display: none; }
+  .detail-body.expanded { display: block; }
+  .detail-inner { padding: 18px 22px; font-size: 13.5px; color: var(--g-text);
+    line-height: 1.7; white-space: pre-wrap; word-wrap: break-word; }
+  .detail-section { margin-bottom: 14px; }
+  .detail-section:last-child { margin-bottom: 0; }
+  .detail-subtitle {
+    font-size: 13px; font-weight: 700; color: var(--g-primary); margin: 0 0 6px;
+    border-left: 3px solid var(--g-primary-light); padding-left: 8px;
+  }
+
+  .ok { color: var(--g-success); font-weight: 700; }
+  .bad { color: #d93025; font-weight: 700; }
+  .warn { color: #f29900; font-weight: 700; }
+
+  footer { text-align: center; color: var(--g-text-muted); font-size: 12px; margin-top: 24px; padding-top: 12px; border-top: 1px solid var(--g-border); }
+  @media (max-width: 600px) {
+    .container { padding: 14px 12px 40px; }
+    .app-header { padding: 16px 20px; flex-direction: column; align-items: flex-start; gap: 10px; }
+    .conclusion-title { font-size: 20px; }
+    .amount-big { font-size: 22px; }
+    .metric-card { min-width: 105px; padding: 12px 14px; }
+    .metric-value { font-size: 15px; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="app-header">
+    <div class="icon">📈</div>
+    <div>
+      <h1>价值投注分析器 v5.0</h1>
+      <div class="subtitle">网页版 · 输入赔率后点击【开始分析】，查看投注建议</div>
+    </div>
+  </div>
+
+  <!-- 网站 -->
+  <div class="g-card">
+    <div class="section-title"><span class="dot"></span>网站赔率 / 奖励率</div>
+    <div style="display:flex; gap:12px; flex-wrap:wrap; align-items:flex-end;">
+      <div style="flex:1; min-width:130px;">
+        <div class="g-field">
+          <label>主队</label>
+          <input type="number" id="main_home" step="0.01" min="0">
+        </div>
+      </div>
+      <div style="flex:1; min-width:130px;">
+        <div class="g-field">
+          <label>客队</label>
+          <input type="number" id="main_away" step="0.01" min="0">
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 对比平台 -->
+  <div class="g-card">
+    <div class="section-title"><span class="dot"></span>对比平台赔率 / 奖励率</div>
+    <div style="display:flex; gap:12px; flex-wrap:wrap; align-items:flex-end;">
+      <div style="flex:1; min-width:130px;">
+        <div class="g-field">
+          <label>主队</label>
+          <input type="number" id="game_home" step="0.01" min="0">
+        </div>
+      </div>
+      <div style="flex:1; min-width:130px;">
+        <div class="g-field">
+          <label>客队</label>
+          <input type="number" id="game_away" step="0.01" min="0">
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="btns">
+    <button class="g-btn g-btn-primary" id="btnAnalyze">开始分析</button>
+    <button class="g-btn g-btn-secondary" id="btnClear">清空</button>
+    <button class="g-btn g-btn-success" id="btnExample">示例</button>
+  </div>
+
+  <!-- 核心结论（分析后显示） -->
+  <div id="conclusionWrap" class="conclusion-card" style="display:none;">
+    <div class="conclusion-badge" id="conclusionBadge"></div>
+    <h2 class="conclusion-title" id="conclusionTitle">—</h2>
+    <p class="conclusion-sub" id="conclusionSub">—</p>
+    <div class="amount-row">
+      <span class="amount-big" id="conclusionAmount">—</span>
+      <span class="amount-unit" id="conclusionAmountUnit">元</span>
+    </div>
+    <p class="amount-tip" id="conclusionTip"></p>
+  </div>
+
+  <!-- 关键指标 -->
+  <div id="metricsWrap" class="metrics" style="display:none;">
+    <div class="metric-card">
+      <span class="metric-label">网站胜率 主/客</span>
+      <span class="metric-value" id="mProb">—</span>
+    </div>
+    <div class="metric-card">
+      <span class="metric-label">公平赔率 主/客</span>
+      <span class="metric-value" id="mFair">—</span>
+    </div>
+    <div class="metric-card">
+      <span class="metric-label">实际赔率 主/客</span>
+      <span class="metric-value" id="mOdds">—</span>
+    </div>
+    <div class="metric-card">
+      <span class="metric-label">价值 主/客</span>
+      <span class="metric-value" id="mValue">—</span>
+    </div>
+    <div class="metric-card">
+      <span class="metric-label">期望收益 主/客</span>
+      <span class="metric-value" id="mExpected">—</span>
+    </div>
+  </div>
+
+  <!-- 详情折叠 -->
+  <div class="detail-panel">
+    <div class="detail-header collapsed" id="detailHeader" onclick="toggleDetail()">
+      <span>🔍 查看详细计算过程</span>
+      <span class="arrow" id="detailArrow">▼</span>
+    </div>
+    <div class="detail-body" id="detailBody">
+      <div class="detail-inner" id="detailContent">填写 4 个数值后点击【开始分析】。
+推荐下注金额为 100 的整数，范围 100-2000 元。</div>
+    </div>
+  </div>
+
+  <footer>价值投注分析器 v5.0 · 网页版</footer>
+</div>
+
+<script src="https://unpkg.com/mdui@2.1.3/dist/js/mdui.min.js"></script>
+<script>
+(function () {
+  const $ = (id) => document.getElementById(id);
+
+  // 按“整组”判断：两个都 >1 视为赔率，两个都 ≤1 视为奖励率
+  // 混合输入时退回单值判断（并在详情中提示）
+  function isOddsPair(a, b) { return a > 1 && b > 1; }
+  function isRewardPair(a, b) { return a <= 1 && b <= 1; }
+
+  function websiteProbs(a, b) {
+    if (isOddsPair(a, b)) return [1 / a, 1 / b];
+    if (isRewardPair(a, b)) return [a, b];
+    return [a > 1 ? 1 / a : a, b > 1 ? 1 / b : b];
+  }
+  function gameOdds(a, b) {
+    if (isOddsPair(a, b)) return [a, b];
+    if (isRewardPair(a, b)) return [a + 1, b + 1];
+    return [a > 1 ? a : a + 1, b > 1 ? b : b + 1];
+  }
+  function pairTypeLabel(a, b) {
+    if (isOddsPair(a, b)) return '赔率';
+    if (isRewardPair(a, b)) return '奖励率';
+    return '混合(按单值判断)';
+  }
+  function fmtPct(x) { return (x * 100).toFixed(1) + '%'; }
+  // 避免出现 -0.0%
+  function nz(x) { return Math.abs(x) < 0.05 ? 0 : x; }
+
+  window.toggleDetail = function () {
+    const header = $('detailHeader');
+    const body = $('detailBody');
+    const expanded = body.classList.toggle('expanded');
+    header.classList.toggle('collapsed', !expanded);
+    $('detailArrow').textContent = expanded ? '▲' : '▼';
+  };
+
+  function analyze() {
+    try {
+      const mainHome = parseFloat($('main_home').value);
+      const mainAway = parseFloat($('main_away').value);
+      const gameHome = parseFloat($('game_home').value);
+      const gameAway = parseFloat($('game_away').value);
+
+      if (isNaN(mainHome) || isNaN(mainAway) || isNaN(gameHome) || isNaN(gameAway)) {
+        alert('请输入有效的数字！');
+        return;
+      }
+      if (mainHome <= 0 || mainAway <= 0 || gameHome <= 0 || gameAway <= 0) {
+        alert('数值必须大于0！');
+        return;
+      }
+
+      const websiteType = pairTypeLabel(mainHome, mainAway);
+      const gameType = pairTypeLabel(gameHome, gameAway);
+
+      const [homeProb, awayProb] = websiteProbs(mainHome, mainAway);
+      const totalImplied = homeProb + awayProb;
+
+      let homeProbAdj = homeProb, awayProbAdj = awayProb;
+      if (totalImplied > 1.0) {
+        homeProbAdj = homeProb / totalImplied;
+        awayProbAdj = awayProb / totalImplied;
+      }
+
+      const [homeOdds, awayOdds] = gameOdds(gameHome, gameAway);
+
+      const fairHomeOdds = 1 / homeProbAdj;
+      const fairAwayOdds = 1 / awayProbAdj;
+
+      const homeValue = nz((homeOdds / fairHomeOdds - 1) * 100);
+      const awayValue = nz((awayOdds / fairAwayOdds - 1) * 100);
+
+      function calcExp(prob, odds) { return prob * odds - 1; }
+      const homeExpected = nz(calcExp(homeProbAdj, homeOdds) * 100);
+      const awayExpected = nz(calcExp(awayProbAdj, awayOdds) * 100);
+
+      // 下注范围：100 - 2000 元（1-20 * 100）
+      const BET_MIN = 100;
+      const BET_MAX = 2000;
+
+      function buildRec(team, value, expected) {
+        if (value > 0 && expected > 0) {
+          return { type: 'rec', team, value, expected,
+            text: `✅ 强烈推荐买入${team}`,
+            amount: BET_MAX };
+        }
+        if (value > 0) {
+          return { type: 'caution', team, value, expected,
+            text: `⚠️ 谨慎买入${team}（价值${value.toFixed(1)}%，期望${expected.toFixed(1)}%）`,
+            amount: BET_MIN };
+        }
+        if (expected > 0) {
+          return { type: 'caution', team, value, expected,
+            text: `⚠️ 谨慎买入${team}（期望${expected.toFixed(1)}%，价值${value.toFixed(1)}%）`,
+            amount: BET_MIN };
+        }
+        return { type: 'none', team, value, expected, text: `❌ 不建议买入${team}`, amount: 0 };
+      }
+      const recHome = buildRec('主队', homeValue, homeExpected);
+      const recAway = buildRec('客队', awayValue, awayExpected);
+
+      const order = { rec: 2, caution: 1, none: 0 };
+      const recs = [recHome, recAway].sort((a, b) => order[b.type] - order[a.type]);
+
+      const wrap = $('conclusionWrap');
+      const badge = $('conclusionBadge');
+      const title = $('conclusionTitle');
+      const sub = $('conclusionSub');
+      const amount = $('conclusionAmount');
+      const amountUnit = $('conclusionAmountUnit');
+      const tip = $('conclusionTip');
+
+      const best = recs[0];
+      const noneBoth = recHome.type === 'none' && recAway.type === 'none';
+      wrap.style.display = 'block';
+      wrap.className = 'conclusion-card ' +
+        (noneBoth ? 'none' : best.type === 'rec' ? 'rec' : 'caution');
+
+      badge.className = 'conclusion-badge ' +
+        (noneBoth ? 'badge-none' : best.type === 'rec' ? 'badge-rec' : 'badge-caution');
+      badge.textContent = noneBoth ? '❌ 不推荐' : best.type === 'rec' ? '✅ 强烈推荐' : '⚠️ 谨慎推荐';
+
+      title.textContent = noneBoth ? '❌ 本场不建议下注' : best.text;
+      sub.textContent = noneBoth
+        ? '主客队均无正价值且无正期望'
+        : `价值${best.value.toFixed(1)}% / 期望${best.expected.toFixed(1)}%`;
+
+      // 推荐下注金额（范围 100-2000 元）
+      if (best.amount > 0) {
+        amount.textContent = best.amount.toFixed(0);
+        amountUnit.textContent = ' 元';
+        tip.textContent = `推荐下注金额：${best.amount.toFixed(0)} 元（下注范围 100-2000 元）`;
+      } else {
+        amount.textContent = '0';
+        amountUnit.textContent = ' 元';
+        tip.textContent = '不推荐下注';
+      }
+
+      // 指标卡
+      $('metricsWrap').style.display = 'flex';
+      $('mProb').innerHTML = fmtPct(homeProbAdj) + ' / ' + fmtPct(awayProbAdj);
+      $('mFair').innerHTML = fairHomeOdds.toFixed(2) + ' / ' + fairAwayOdds.toFixed(2);
+      $('mOdds').innerHTML = homeOdds.toFixed(2) + ' / ' + awayOdds.toFixed(2);
+      $('mValue').className = 'metric-value ' + (homeValue > 0 || awayValue > 0 ? 'pos' : 'neg');
+      $('mValue').textContent = homeValue.toFixed(1) + '% / ' + awayValue.toFixed(1) + '%';
+      $('mExpected').className = 'metric-value ' + (homeExpected > 0 || awayExpected > 0 ? 'pos' : 'neg');
+      $('mExpected').textContent = homeExpected.toFixed(1) + '% / ' + awayExpected.toFixed(1) + '%';
+
+      // 详细过程（精简到 6 行关键数据）
+      const detail = [];
+      detail.push(`识别：网站=${websiteType}，对比平台=${gameType}`);
+      detail.push(`胜率：主 ${fmtPct(homeProbAdj)} / 客 ${fmtPct(awayProbAdj)}`);
+      detail.push(`公平赔率：主 ${fairHomeOdds.toFixed(2)} / 客 ${fairAwayOdds.toFixed(2)}`);
+      detail.push(`实际赔率：主 ${homeOdds.toFixed(2)} / 客 ${awayOdds.toFixed(2)}`);
+      detail.push(`价值：主 ${homeValue.toFixed(1)}% / 客 ${awayValue.toFixed(1)}%`);
+      detail.push(`期望：主 ${homeExpected.toFixed(1)}% / 客 ${awayExpected.toFixed(1)}%`);
+      detail.push(`推荐：${noneBoth ? '本场不建议下注' : best.text + (best.amount > 0 ? '，下注 ' + best.amount + ' 元' : '')}`);
+
+      $('detailContent').textContent = detail.join('\n');
+
+      $('detailBody').classList.remove('expanded');
+      $('detailHeader').classList.add('collapsed');
+      $('detailArrow').textContent = '▼';
+
+    } catch (e) {
+      alert('计算出错：' + e.message);
+    }
+  }
+
+  function clearAll() {
+    $('main_home').value = '';
+    $('main_away').value = '';
+    $('game_home').value = '';
+    $('game_away').value = '';
+    $('conclusionWrap').style.display = 'none';
+    $('metricsWrap').style.display = 'none';
+    $('detailContent').textContent = '填写 4 个数值后点击【开始分析】。\n推荐下注金额为 100 的整数，范围 100-2000 元。';
+  }
+
+  function fillExample() {
+    $('main_home').value = '1.8';
+    $('main_away').value = '2.4';
+    $('game_home').value = '2.0';
+    $('game_away').value = '2.2';
+  }
+
+  $('btnAnalyze').addEventListener('click', analyze);
+  $('btnClear').addEventListener('click', clearAll);
+  $('btnExample').addEventListener('click', fillExample);
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+      e.preventDefault();
+      analyze();
+    }
+  });
+})();
+</script>
+</body>
+</html>
